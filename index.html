@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artemix AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #212121;
+            --bg-sidebar: #171717;
+            --text-main: #ececec;
+            --text-secondary: #b4b4b4;
+            --accent: #10a37f;
+            --border: #3d3d3d;
+            --input-bg: #2f2f2f;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg-dark); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+
+        /* --- SETUP --- */
+        #setup-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .setup-card { background: #171717; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; border: 1px solid var(--border); }
+        .setup-card input { width: 100%; padding: 14px; margin-bottom: 20px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; color: white; outline: none; text-align: center; }
+        .setup-card button { width: 100%; padding: 14px; background: var(--accent); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; }
+
+        /* --- SIDEBAR --- */
+        #sidebar { width: 260px; background: var(--bg-sidebar); padding: 15px; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+        .new-chat-btn { border: 1px solid var(--border); padding: 12px; border-radius: 8px; text-align: center; cursor: pointer; font-size: 14px; transition: 0.2s; margin-bottom: 20px; }
+        .new-chat-btn:hover { background: #2b2b2b; }
+        .user-box { margin-top: auto; padding: 15px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 32px; height: 32px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: black; }
+
+        /* --- CHAT AREA --- */
+        #main-chat { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+        #chat-header { width: 100%; padding: 15px; text-align: center; font-weight: 600; font-size: 18px; color: var(--accent); background: var(--bg-dark); border-bottom: 1px solid var(--border); }
+        #chat-window { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; padding-bottom: 20px; }
+        #welcome-screen { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        
+        .message-row { width: 100%; padding: 20px 15%; display: flex; flex-direction: column; gap: 5px; }
+        .message-row.ai { background: rgba(255,255,255,0.03); }
+        .msg-role { font-weight: 600; font-size: 11px; color: var(--accent); text-transform: uppercase; }
+        .msg-text { font-size: 15px; line-height: 1.6; white-space: pre-wrap; }
+
+        /* --- ANIMAZIONE CARICAMENTO --- */
+        .typing { font-style: italic; color: var(--text-secondary); font-size: 13px; display: flex; align-items: center; gap: 5px; }
+        .dots { display: inline-block; animation: blink 1.4s infinite both; }
+        .dots:nth-child(2) { animation-delay: .2s; }
+        .dots:nth-child(3) { animation-delay: .4s; }
+        @keyframes blink { 0% { opacity: .2; } 20% { opacity: 1; } 100% { opacity: .2; } }
+
+        /* --- INPUT --- */
+        .input-area { padding: 20px 15% 40px 15%; }
+        .input-wrapper { background: var(--input-bg); border: 1px solid var(--border); border-radius: 15px; display: flex; align-items: center; padding: 10px 15px; }
+        #userInput { flex: 1; background: transparent; border: none; color: white; outline: none; font-size: 16px; padding: 0 10px; }
+        .send-btn-img { height: 28px; width: 28px; cursor: pointer; transition: transform 0.1s; }
+        .send-btn-img:active { transform: scale(0.9); }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="setup-overlay" class="hidden">
+        <div class="setup-card">
+            <h1 style="color:var(--accent); margin-bottom:10px;">ARTEMIX</h1>
+            <input type="text" id="usernameInput" placeholder="Inserisci il tuo nome...">
+            <button onclick="saveUser()">Entra</button>
+        </div>
+    </div>
+
+    <div id="sidebar">
+        <div class="new-chat-btn" onclick="resetChat()">+ Nuova Chat</div>
+        <div class="user-box">
+            <div class="avatar" id="user-avatar">?</div>
+            <div id="user-display-name">Utente</div>
+        </div>
+    </div>
+
+    <div id="main-chat">
+        <div id="chat-header">ARTEMIX...</div>
+        
+        <div id="welcome-screen">
+            <h2 id="welcome-text" style="font-size:32px;"></h2>
+            <p style="color:#888;">Come posso aiutarti oggi?</p>
+        </div>
+
+        <div id="chat-window" class="hidden"></div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input type="text" id="userInput" placeholder="Messaggia Artemix..." autocomplete="off">
+                <img src="sendarrow.png" alt="Invia" class="send-btn-img" id="sendBtn">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let userName = "";
+        let chatHistory = [];
+        const API_KEY = "AIzaSyDF0RH8_gzLFPhkLsIvWdnLzml71vzd-8A";
+
+        window.onload = () => {
+            const saved = localStorage.getItem('artemix_user');
+            if (!saved) {
+                document.getElementById('setup-overlay').classList.remove('hidden');
+            } else {
+                userName = saved;
+                const hist = localStorage.getItem('artemix_history');
+                if (hist) chatHistory = JSON.parse(hist);
+                initApp();
+            }
+        };
+
+        function saveUser() {
+            const n = document.getElementById('usernameInput').value.trim();
+            if (n) { localStorage.setItem('artemix_user', n); userName = n; initApp(); }
+        }
+
+        function initApp() {
+            document.getElementById('setup-overlay').classList.add('hidden');
+            document.getElementById('welcome-text').innerText = `Ciao, ${userName}!`;
+            document.getElementById('user-display-name').innerText = userName;
+            document.getElementById('user-avatar').innerText = userName[0].toUpperCase();
+            if (chatHistory.length > 0) {
+                showChat();
+                chatHistory.forEach(m => renderMsg(m.text, m.role));
+            }
+        }
+
+        function showChat() {
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('chat-window').classList.remove('hidden');
+        }
+
+        function renderMsg(text, role, isTyping = false) {
+            const win = document.getElementById('chat-window');
+            const row = document.createElement('div');
+            row.className = `message-row ${role === 'user' ? '' : 'ai'}`;
+            row.id = isTyping ? 'typing-indicator' : '';
+            
+            const roleName = role === 'user' ? userName : 'Artemix';
+            const content = isTyping ? 
+                `<div class="typing">Artemix sta scrivendo<span class="dots">.</span><span class="dots">.</span><span class="dots">.</span></div>` : 
+                `<div class="msg-text">${text}</div>`;
+
+            row.innerHTML = `<div class="msg-role">${roleName}</div>${content}`;
+            win.appendChild(row);
+            win.scrollTop = win.scrollHeight;
+        }
+
+        function resetChat() {
+            chatHistory = [];
+            localStorage.setItem('artemix_history', "[]");
+            document.getElementById('chat-window').innerHTML = "";
+            document.getElementById('chat-window').classList.add('hidden');
+            document.getElementById('welcome-screen').classList.remove('hidden');
+        }
+
+        async function send() {
+            const input = document.getElementById('userInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            showChat();
+            renderMsg(text, 'user');
+            input.value = "";
+            chatHistory.push({ role: 'user', parts: [{ text: text }] });
+
+            // Mostra animazione caricamento
+            renderMsg("", 'ai', true);
+
+            try {
+                // Fetch diretta con timeout per evitare blocchi infiniti
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: chatHistory })
+                });
+
+                const data = await response.json();
+                
+                // Rimuovi indicatore caricamento
+                const indicator = document.getElementById('typing-indicator');
+                if (indicator) indicator.remove();
+
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    const aiResp = data.candidates[0].content.parts[0].text;
+                    renderMsg(aiResp, 'ai');
+                    chatHistory.push({ role: 'model', parts: [{ text: aiResp }] });
+                    localStorage.setItem('artemix_history', JSON.stringify(chatHistory.filter(m => m.parts)));
+                } else {
+                    throw new Error();
+                }
+            } catch (e) {
+                const indicator = document.getElementById('typing-indicator');
+                if (indicator) indicator.remove();
+                renderMsg("Si è verificato un errore. Assicurati che il tuo browser permetta le connessioni esterne o riprova tra poco.", 'ai');
+            }
+        }
+
+        document.getElementById('userInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') send(); });
+        document.getElementById('sendBtn').addEventListener('click', send);
+    </script>
+</body>
+</html>
