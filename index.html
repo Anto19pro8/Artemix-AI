@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#ffb3d9">
+  <title>Inserisci codice · Claw Quest</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="scan" class="bg-sparkles">
+  <header class="hud">
+    <div class="hud-stat"><span>Livello</span><strong id="hud-level">1</strong></div>
+    <div class="hud-stat"><span>Monete</span><strong id="hud-coins">0</strong></div>
+    <div class="hud-stat"><span>Ingressi</span><strong id="hud-qr">0</strong></div>
+  </header>
+
+  <main class="game-main scan-main">
+    <div class="title-bar">
+      <h1>🎀 Claw Quest PRO MAX</h1>
+      <p>Inserisci il codice a 4 cifre del livello 💖</p>
+    </div>
+
+    <form id="code-form" class="code-form code-form-hero">
+      <label for="code-input">✏️ Codice</label>
+      <input type="text" id="code-input" placeholder="••••" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off">
+      <button type="submit" class="btn-bubble">Vai alla Claw Machine 🦀</button>
+    </form>
+
+    <p class="scan-help">
+      <a href="codici.html">📋 Vedi tutti i codici</a>
+    </p>
+  </main>
+
+  <nav class="nav-dock">
+    <button type="button" class="nav-btn active"><span class="icon">✏️</span>Codice</button>
+    <button type="button" class="nav-btn" data-nav="inventory.html"><span class="icon">🎒</span>Inventario</button>
+    <button type="button" class="nav-btn" data-nav="shop.html"><span class="icon">🛒</span>Negozio</button>
+  </nav>
+
+  <script src="../js/save.js"></script>
+  <script src="../js/codes.js"></script>
+  <script src="../js/pets.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/game.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      ClawUI.updateHUD(ClawSave.loadSave());
+    });
+  </script>
+</body>
+</html>

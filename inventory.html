@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#ffb3d9">
+  <title>Inventario · Claw Quest</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="inventory" class="bg-sparkles">
+  <header class="hud">
+    <div class="hud-stat"><span>Livello</span><strong id="hud-level">1</strong></div>
+    <div class="hud-stat"><span>Monete</span><strong id="hud-coins">0</strong></div>
+    <div class="hud-stat"><span>Ingressi</span><strong id="hud-qr">0</strong></div>
+  </header>
+
+  <div class="page-content">
+    <div class="page-header">
+      <h1>🎒 Il Tuo Inventario</h1>
+      <p>Cuccioli & trofei kawaii</p>
+    </div>
+
+    <h2 class="section-title">🐾 Cuccioli</h2>
+    <div id="pets-grid" class="grid-pets"></div>
+    <div id="pets-empty" class="empty-state" style="display:none">
+      Nessun cucciolo ancora! Inserisci un codice per ottenerne 💖
+    </div>
+
+    <h2 class="section-title">🏆 Trofei (ogni 2 ingressi)</h2>
+    <div id="trophies-grid" class="grid-trophies"></div>
+    <div id="trophies-empty" class="empty-state" style="display:none">
+      Sblocca trofei ogni 2 codici inseriti! ⭐
+    </div>
+  </div>
+
+  <nav class="nav-dock">
+    <button type="button" class="nav-btn" data-nav="index.html"><span class="icon">✏️</span>Codice</button>
+    <button type="button" class="nav-btn active"><span class="icon">🎒</span>Inventario</button>
+    <button type="button" class="nav-btn" data-nav="shop.html"><span class="icon">🛒</span>Negozio</button>
+  </nav>
+
+  <script src="../js/save.js"></script>
+  <script src="../js/pets.js"></script>
+  <script src="../js/ui.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const save = ClawSave.loadSave();
+      ClawUI.updateHUD(save);
+      ClawUI.bindNav();
+
+      const petsGrid = document.getElementById('pets-grid');
+      const petsEmpty = document.getElementById('pets-empty');
+      if (!save.pets.length) {
+        petsEmpty.style.display = 'block';
+      } else {
+        petsGrid.innerHTML = save.pets.map((p) => `
+          <article class="pet-card">
+            <div class="emoji">${p.emoji}</div>
+            <h3>${p.name}</h3>
+            <p style="font-size:0.75rem">${p.species}</p>
+            ${ClawPets.rarityBadgeHTML(p.rarity)}
+          </article>
+        `).join('');
+      }
+
+      const troGrid = document.getElementById('trophies-grid');
+      const troEmpty = document.getElementById('trophies-empty');
+      if (!save.trophies.length) {
+        troEmpty.style.display = 'block';
+      } else {
+        troGrid.innerHTML = save.trophies.map((t) => `
+          <article class="trophy-card">
+            <img src="../assets/trophies/${t.file}" alt="${t.name}" onerror="this.outerHTML='<span class=\\'trophy-emoji\\'>${t.emoji}</span>'">
+            <h3 style="font-size:0.85rem;margin-top:8px">${t.name}</h3>
+            <p style="font-size:0.65rem">Scan #${t.scanNumber || '—'}</p>
+          </article>
+        `).join('');
+      }
+    });
+  </script>
+</body>
+</html>

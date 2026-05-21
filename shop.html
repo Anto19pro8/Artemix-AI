@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#ffb3d9">
+  <title>Negozio · Claw Quest</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="shop" class="bg-sparkles">
+  <header class="hud">
+    <div class="hud-stat"><span>Livello</span><strong id="hud-level">1</strong></div>
+    <div class="hud-stat"><span>Monete</span><strong id="hud-coins">0</strong></div>
+    <div class="hud-stat"><span>Ingressi</span><strong id="hud-qr">0</strong></div>
+  </header>
+
+  <div class="page-content">
+    <div class="page-header">
+      <h1>🛒 Negozio Pet</h1>
+      <p>Gacha kawaii con monete</p>
+    </div>
+
+    <div class="shop-banner">
+      <p>Compra uova misteriose e ottieni cuccioli rari! ✨</p>
+      <div class="gacha-odds">
+        Comune 55% · Raro 28% · Epico 14% · Leggendario 3%
+      </div>
+    </div>
+
+    <div class="grid-pets">
+      <article class="shop-egg" data-tier="basic">
+        <div style="font-size:3rem">🥚</div>
+        <h3>Uova Dolci</h3>
+        <p class="price">💰 50 monete</p>
+      </article>
+      <article class="shop-egg" data-tier="premium">
+        <div style="font-size:3rem">💖</div>
+        <h3>Uova Premium</h3>
+        <p class="price">💰 150 monete</p>
+        <p style="font-size:0.65rem;margin-top:4px">+5% leggendario</p>
+      </article>
+      <article class="shop-egg" data-tier="mega">
+        <div style="font-size:3rem">🌟</div>
+        <h3>Mega Gacha</h3>
+        <p class="price">💰 300 monete</p>
+        <p style="font-size:0.65rem;margin-top:4px">+12% leggendario</p>
+      </article>
+    </div>
+  </div>
+
+  <div id="shop-modal" class="modal">
+    <div class="modal-card">
+      <h2 id="shop-result-title">Nuovo cucciolo!</h2>
+      <div id="shop-result-emoji" style="font-size:4rem">🐱</div>
+      <p id="shop-result-name"></p>
+      <div id="shop-result-badge"></div>
+      <button type="button" class="btn-bubble" onclick="document.getElementById('shop-modal').classList.remove('active')">Bellissimo! 💖</button>
+    </div>
+  </div>
+
+  <nav class="nav-dock">
+    <button type="button" class="nav-btn" data-nav="index.html"><span class="icon">✏️</span>Codice</button>
+    <button type="button" class="nav-btn" data-nav="inventory.html"><span class="icon">🎒</span>Inventario</button>
+    <button type="button" class="nav-btn active"><span class="icon">🛒</span>Negozio</button>
+  </nav>
+
+  <script src="../js/save.js"></script>
+  <script src="../js/pets.js"></script>
+  <script src="../js/ui.js"></script>
+  <script>
+    const PRICES = { basic: 50, premium: 150, mega: 300 };
+    const BONUS = { basic: 0, premium: 5, mega: 12 };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      let save = ClawSave.loadSave();
+      ClawUI.updateHUD(save);
+      ClawUI.initAudioContext();
+      ClawUI.bindNav();
+
+      document.querySelectorAll('.shop-egg').forEach((egg) => {
+        egg.addEventListener('click', () => {
+          const tier = egg.dataset.tier;
+          const price = PRICES[tier];
+          if (save.coins < price) {
+            ClawUI.toast('Monete insufficienti! 💸', 'warn');
+            return;
+          }
+          save.coins -= price;
+          const pet = ClawPets.createPet({
+            name: ClawPets.randomKawaiiName(),
+            rarity: ClawPets.pickWeightedRarity(BONUS[tier])
+          });
+          save.pets.push(pet);
+          ClawSave.writeSave(save);
+          ClawUI.updateHUD(save);
+          ClawUI.playSfx('pop');
+          ClawUI.playSfx('sparkle');
+
+          document.getElementById('shop-result-emoji').textContent = pet.emoji;
+          document.getElementById('shop-result-name').textContent = pet.name + ' · ' + pet.species;
+          document.getElementById('shop-result-badge').innerHTML = ClawPets.rarityBadgeHTML(pet.rarity);
+          document.getElementById('shop-modal').classList.add('active');
+          ClawUI.toast('✨ Hai ottenuto ' + pet.name + '!', 'success');
+        });
+      });
+    });
+  </script>
+</body>
+</html>
